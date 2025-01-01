@@ -11,8 +11,7 @@ repositories {
 
 dependencies {
     implementation(libs.kotlinx.coroutines)
-    implementation(libs.netty.transport.epoll)
-    implementation(libs.netty.transport.kqueue)
+    implementation(libs.netty.all)
     implementation(libs.scram.client)
     testImplementation(kotlin("test"))
     testImplementation(libs.mockk)

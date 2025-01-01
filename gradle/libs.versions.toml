@@ -8,8 +8,7 @@ logback-version = "1.5.15"
 
 [libraries]
 kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines-version" }
-netty-transport-epoll = { group = "io.netty", name = "netty-transport-native-epoll", version.ref = "netty-version" }
-netty-transport-kqueue = { group = "io.netty", name = "netty-transport-native-kqueue", version.ref = "netty-version" }
+netty-all = { group = "io.netty", name = "netty-all", version.ref = "netty-version" }
 scram-client = { group = "com.ongres.scram", name = "scram-client", version.ref = "scram-client-version" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk-version" }
 testcontainers-postgresql = { group = "org.testcontainers", name = "postgresql", version.ref = "testcontainers-version" }
