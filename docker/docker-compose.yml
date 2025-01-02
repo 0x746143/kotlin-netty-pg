@@ -1,0 +1,9 @@
+name: knpg
+services:
+  db:
+    build: .
+    image: knpg-db
+    ports:
+      - "54321:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres1234
