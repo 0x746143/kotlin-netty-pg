@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.x746143.knpg
+package x746143.ktntpg
 
 fun main() {
     NettyHttpServer(8080).start()
