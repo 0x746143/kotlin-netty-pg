@@ -13,10 +13,10 @@ dependencies {
     implementation(libs.kotlinx.coroutines)
     implementation(libs.netty.all)
     implementation(libs.scram.client)
+    implementation(libs.logback.classic)
     testImplementation(kotlin("test"))
     testImplementation(libs.mockk)
     testImplementation(libs.testcontainers.postgresql)
-    testImplementation(libs.logback.classic)
 }
 
 tasks.test {
