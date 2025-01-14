@@ -70,10 +70,9 @@ internal class StartupAuthHandler(
 
     suspend fun authenticate() {
         while (true) {
-            val source = input.readMessage()
-            val messageType = source.readByte()
-            val messageLength = source.readInt()
-            val message = source.readSlice(messageLength - 4)
+            val message = input.readMessage()
+            val messageType = message.readByte()
+            message.readInt() // skip message length
             when (messageType) {
                 BackendMessage.AUTHENTICATION -> authenticate(message)
                 // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-PARAMETERSTATUS
@@ -97,17 +96,17 @@ internal class StartupAuthHandler(
                 }
                 // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-READYFORQUERY
                 BackendMessage.READY_FOR_QUERY -> {
-                    source.release()
+                    message.release()
                     return
                 }
                 else -> throw PgException("Unsupported message type: ${messageType.toInt().toChar()}")
             }
-            source.release()
+            message.release()
         }
     }
 
-    private suspend fun authenticate(source: ByteBuf) {
-        val readInt = source.readInt()
+    private fun authenticate(message: ByteBuf) {
+        val readInt = message.readInt()
         when (val authDataType = readInt) {
             // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-AUTHENTICATIONSASL
             // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-SASLINITIALRESPONSE
@@ -122,15 +121,15 @@ internal class StartupAuthHandler(
             // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-AUTHENTICATIONSASLCONTINUE
             // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-SASLRESPONSE
             Authentication.SASL_CONTINUE -> output.writePgMessage(FrontendMessage.SASL_RESPONSE) {
-                scramClient.serverFirstMessage(source.readString())
+                scramClient.serverFirstMessage(message.readString())
                 writeString(scramClient.clientFinalMessage().toString())
             }
             // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-AUTHENTICATIONSASLFINAL
-            Authentication.SASL_FINAL -> scramClient.serverFinalMessage(source.readString())
+            Authentication.SASL_FINAL -> scramClient.serverFinalMessage(message.readString())
             // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-AUTHENTICATIONMD5PASSWORD
             Authentication.MD5_PASSWORD -> output.writePgMessage(FrontendMessage.PASSWORD_MESSAGE) {
                 val salt = ByteArray(4)
-                source.readBytes(salt)
+                message.readBytes(salt)
                 writeCString(md5Hash(salt))
             }
             // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-AUTHENTICATIONOK
