@@ -15,19 +15,14 @@
  */
 package x746143.ktntpg.pgclient.wire3
 
-import x746143.ktntpg.pgclient.PgAuthProperties
-import x746143.ktntpg.pgclient.PgException
 import com.ongres.scram.client.ScramClient
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.Unconfined
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
-import x746143.ktntpg.channel.ContinuationChannel
-import x746143.ktntpg.pgclient.test.StubOutputChannel
-import x746143.ktntpg.pgclient.test.UnbufferedContChannel
-import x746143.ktntpg.pgclient.test.assertContentEquals
-import x746143.ktntpg.pgclient.test.mixedHexToByteBuf
-import x746143.ktntpg.startUninterceptedCoroutine
+import x746143.ktntpg.pgclient.PgAuthProperties
+import x746143.ktntpg.pgclient.PgException
+import x746143.ktntpg.pgclient.test.*
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
