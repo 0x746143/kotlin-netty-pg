@@ -80,20 +80,7 @@ internal class StartupAuthHandler(
                 // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-BACKENDKEYDATA
                 BackendMessage.BACKEND_KEY_DATA -> {} // TODO: handling
                 // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-ERRORRESPONSE
-                BackendMessage.ERROR_RESPONSE -> {
-                    generateSequence {
-                        message.readByte().toInt().let { fieldType ->
-                            if (fieldType == 0) null
-                            else fieldType to message.readCString()
-                        }
-                    }.toMap().let { fields ->
-                        throw PgException(
-                            fields[ErrorField.MESSAGE] ?: "Unknown error",
-                            fields[ErrorField.SEVERITY],
-                            fields[ErrorField.CODE],
-                        )
-                    }
-                }
+                BackendMessage.ERROR_RESPONSE -> handleErrorResponse(message)
                 // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-READYFORQUERY
                 BackendMessage.READY_FOR_QUERY -> {
                     message.release()
