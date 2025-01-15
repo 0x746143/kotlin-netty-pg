@@ -54,3 +54,7 @@ private fun Char.hexToInt(i: Int): Int {
         else -> throw IllegalArgumentException("Invalid hex character $this at index $i")
     }
 }
+
+fun String.toSingleLine(): String {
+    return trimIndent().replace("\n", " ")
+}

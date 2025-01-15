@@ -17,6 +17,7 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(libs.mockk)
     testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.jdbc.postgresql) // required for testcontainers
 }
 
 tasks.test {
