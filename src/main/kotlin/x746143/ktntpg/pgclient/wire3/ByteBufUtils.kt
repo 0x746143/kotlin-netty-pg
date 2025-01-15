@@ -53,6 +53,10 @@ internal fun ByteBuf.readString(): String {
     return readCharSequence(readableBytes(), UTF_8).toString()
 }
 
+internal fun ByteBuf.readString(length: Int): String {
+    return readCharSequence(length, UTF_8).toString()
+}
+
 internal fun ByteBuf.readCString(): String {
     val zeroIndex = indexOf(readerIndex(), readerIndex() + readableBytes(), 0)
     val result = readCharSequence(zeroIndex - readerIndex(), UTF_8)

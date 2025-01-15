@@ -17,6 +17,7 @@ package x746143.ktntpg.pgclient
 
 import x746143.ktntpg.channel.InputMessageChannel
 import x746143.ktntpg.channel.OutputMessageChannel
+import x746143.ktntpg.pgclient.wire3.QueryHandler
 
 class PgConnectionImpl(
     val input: InputMessageChannel,
@@ -24,8 +25,10 @@ class PgConnectionImpl(
     private val onClose: (suspend (PgConnectionImpl) -> Unit)?
 ) : PgConnection {
 
+    private val queryHandler = QueryHandler(input, output)
+
     override suspend fun query(sql: String): List<Row> {
-        TODO()
+        return queryHandler.query(sql)
     }
 
     private suspend fun closeConnection() {
