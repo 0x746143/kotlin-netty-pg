@@ -16,16 +16,19 @@
 package x746143.ktntpg.pgclient.test
 
 import io.netty.buffer.ByteBuf
+import io.netty.buffer.Unpooled
 import x746143.ktntpg.channel.OutputMessageChannel
+import x746143.ktntpg.pgclient.wire3.toByteArray
+import kotlin.test.assertContentEquals
 
-class StubOutputChannel : OutputMessageChannel {
-    private var message: ByteBuf? = null
-
-    fun receive(): ByteBuf {
-        return message!!
-    }
+class TestOutputChannel : OutputMessageChannel {
+    private var message = Unpooled.EMPTY_BUFFER
 
     override fun writeMessage(message: ByteBuf) {
         this.message = message
+    }
+
+    fun verifyMessage(expectedMsg: String) {
+        assertContentEquals(expectedMsg.mixedHexToByteBuf().toByteArray(), message.toByteArray())
     }
 }

@@ -29,8 +29,8 @@ import kotlin.test.assertEquals
 
 class StartupAuthHandlerTest {
 
-    private var input = UnbufferedContChannel()
-    private var output = StubOutputChannel()
+    private var input = TestInputChannel()
+    private var output = TestOutputChannel()
     private var props = TestPgAuthProperties("test-user", "test-password", "test-db", "test-app")
 
     @Timeout(1)
@@ -38,15 +38,15 @@ class StartupAuthHandlerTest {
     fun testStartupMessage() = runBlocking {
         StartupAuthHandler(input, output, props).sendStartupMessage()
         // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-STARTUPMESSAGE
-        val expected = """
+        val startupMessage = """
             [00000066][00030000]
             user[00]test-user[00]
             database[00]test-db[00]
             application_name[00]test-app[00]
             client_encoding[00]utf8[00]
             DateStyle[00]ISO[00][00]
-            """.mixedHexToByteBuf()
-        assertContentEquals(expected, output.receive())
+            """
+        output.verifyMessage(startupMessage)
     }
 
     @Timeout(1)
@@ -64,46 +64,42 @@ class StartupAuthHandlerTest {
         }
 
         // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-AUTHENTICATIONSASL
-        val authRequestSasl = "R[00000017][0000000a]SCRAM-SHA-256[00][00]".mixedHexToByteBuf()
+        val authRequestSasl = "R[00000017][0000000a]SCRAM-SHA-256[00][00]"
         input.send(authRequestSasl)
 
         // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-SASLINITIALRESPONSE
-        val expectedSaslInitialResponse = """
+        val saslInitialResponse = """
             p[0000003f]SCRAM-SHA-256[00][00000029]
             n,,n=test-user,r=Zr_UEQW:@]US$3;>;OWTSOJF
-            """.mixedHexToByteBuf()
-        val actualSaslInitialResponse = output.receive()
-        assertContentEquals(expectedSaslInitialResponse, actualSaslInitialResponse)
+            """
+        output.verifyMessage(saslInitialResponse)
 
         // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-AUTHENTICATIONSASLCONTINUE
         val authRequestSaslContinue = """
             R[0000005c][0000000b]
             r=Zr_UEQW:@]US$3;>;OWTSOJFVt7fBPDMwIckFZhqWGSWllyY,
             s=rD4Klg5kIRdD9Lmh0WIhfA==,i=4096
-            """.mixedHexToByteBuf()
+            """
         input.send(authRequestSaslContinue)
 
         // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-SASLRESPONSE
-        val expectedSaslResponse = """
+        val saslResponse = """
             p[0000006c]
             c=biws,r=Zr_UEQW:@]US$3;>;OWTSOJFVt7fBPDMwIckFZhqWGSWllyY,
             p=vgKpQ5YXjKrIcvyuopH/bp+7Rhp5we1poCyKkIMyrpI=
-            """.mixedHexToByteBuf()
-        val actualSaslResponse = output.receive()
-        assertContentEquals(expectedSaslResponse, actualSaslResponse)
+            """
+        output.verifyMessage(saslResponse)
 
         // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-AUTHENTICATIONSASLFINAL
-        val authRequestSaslFinal = """
-            R[00000036][0000000c]v=IpT7VwZ1dlYdlXrfOKJUdS+VVTz+8/Oark1phDOpQFQ=
-            """.mixedHexToByteBuf()
+        val authRequestSaslFinal = "R[00000036][0000000c]v=IpT7VwZ1dlYdlXrfOKJUdS+VVTz+8/Oark1phDOpQFQ="
         input.send(authRequestSaslFinal)
 
         // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-AUTHENTICATIONOK
-        val authRequestSuccess = "R[00000008][00000000]".mixedHexToByteBuf()
+        val authRequestSuccess = "R[00000008][00000000]"
         input.send(authRequestSuccess)
 
         // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-READYFORQUERY
-        val readyForQuery = "Z[00000005]I".mixedHexToByteBuf()
+        val readyForQuery = "Z[00000005]I"
         input.send(readyForQuery)
 
         job.join()
@@ -117,23 +113,19 @@ class StartupAuthHandlerTest {
         }
 
         // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-AUTHENTICATIONMD5PASSWORD
-        val authenticationMD5Password = "R[0000000c][00000005][34ac9b4f]".mixedHexToByteBuf()
+        val authenticationMD5Password = "R[0000000c][00000005][34ac9b4f]"
         input.send(authenticationMD5Password)
 
-        yield()
         // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-PASSWORDMESSAGE
-        val expectedPasswordMessage = """
-            p[00000028]md5d0083471c712392fd3ba76ada9f85d3c[00]
-            """.mixedHexToByteBuf()
-        val actualPasswordMessage = output.receive()
-        assertContentEquals(expectedPasswordMessage, actualPasswordMessage)
+        val passwordMessage = "p[00000028]md5d0083471c712392fd3ba76ada9f85d3c[00]"
+        output.verifyMessage(passwordMessage)
 
         // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-AUTHENTICATIONOK
-        val authRequestSuccess = "R[00000008][00000000]".mixedHexToByteBuf()
+        val authRequestSuccess = "R[00000008][00000000]"
         input.send(authRequestSuccess)
 
         // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-READYFORQUERY
-        val readyForQuery = "Z[00000005]I".mixedHexToByteBuf()
+        val readyForQuery = "Z[00000005]I"
         input.send(readyForQuery)
 
         job.join()
@@ -152,7 +144,7 @@ class StartupAuthHandlerTest {
             E[00000069]SFATAL[00]VFATAL[00]C28P01[00]
             Mpassword authentication failed for user "test-user"[00]
             Fauth.c[00]L323[00]Rauth_failed[00][00]
-            """.mixedHexToByteBuf()
+            """
         input.send(errorResponse)
 
         val ex = deferredException.await()

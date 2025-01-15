@@ -17,12 +17,11 @@ package x746143.ktntpg.pgclient.test
 
 import io.netty.buffer.ByteBuf
 import x746143.ktntpg.channel.InputMessageChannel
-import x746143.ktntpg.pgclient.wire3.toStringUtf8
 import x746143.ktntpg.suspendUninterceptedCoroutine
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 
-class UnbufferedContChannel : InputMessageChannel {
+class TestInputChannel : InputMessageChannel {
     private var continuation: Continuation<ByteBuf>? = null
 
     override suspend fun readMessage(): ByteBuf {
@@ -31,13 +30,13 @@ class UnbufferedContChannel : InputMessageChannel {
         }
     }
 
-    fun send(msg: ByteBuf) {
+    fun send(msg: String) {
         val cont = continuation
         if (cont == null) {
-            throw UnhandledMessageException(msg.toStringUtf8())
+            throw UnhandledMessageException(msg)
         } else {
             continuation = null
-            cont.resume(msg)
+            cont.resume(msg.mixedHexToByteBuf())
         }
     }
 

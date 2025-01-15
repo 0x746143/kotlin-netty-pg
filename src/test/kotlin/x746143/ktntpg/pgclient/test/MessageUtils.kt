@@ -17,7 +17,6 @@ package x746143.ktntpg.pgclient.test
 
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
-import x746143.ktntpg.pgclient.wire3.toByteArray
 
 fun String.mixedHexToByteBuf(): ByteBuf {
     val str = trimIndent().replace("\n", "")
@@ -54,8 +53,4 @@ private fun Char.hexToInt(i: Int): Int {
         in 'a'..'f' -> this - 'a' + 10
         else -> throw IllegalArgumentException("Invalid hex character $this at index $i")
     }
-}
-
-fun assertContentEquals(expected: ByteBuf, actual: ByteBuf) {
-    kotlin.test.assertContentEquals(expected.toByteArray(), actual.toByteArray())
 }
