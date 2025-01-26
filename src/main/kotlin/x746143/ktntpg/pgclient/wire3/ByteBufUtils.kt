@@ -68,27 +68,62 @@ internal inline fun OutputMessageChannel.writePgMessage(
     identifier: Int,
     block: ByteBuf.() -> Unit
 ) {
-    val buffer = Unpooled.buffer()
-    buffer.writeByte(identifier)
-    buffer.writeInt(0)
-    buffer.block()
-    buffer.setInt(1, buffer.writerIndex() - 1)
+    val buffer = Unpooled.buffer().apply {
+        writeByte(identifier)
+        writeInt(0) // reserve 4 bytes for message length
+        block()
+        setInt(1, writerIndex() - 1) // set message length
+    }
     writeMessage(buffer)
 }
 
 internal inline fun OutputMessageChannel.writePgMessage(
     block: ByteBuf.() -> Unit
 ) {
-    val buffer = Unpooled.buffer()
-    buffer.writeInt(0)
-    buffer.block()
-    buffer.setInt(0, buffer.writerIndex())
+    val buffer = Unpooled.buffer().apply {
+        writeInt(0) // reserve 4 bytes for message length
+        block()
+        setInt(0, writerIndex()) // set message length
+    }
     writeMessage(buffer)
+}
+
+internal inline fun OutputMessageChannel.writePgMessages(
+    block: ByteBuf.() -> Unit
+) {
+    val buffer = Unpooled.buffer()
+    buffer.block()
+    writeMessage(buffer)
+}
+
+internal inline fun ByteBuf.writePgMessage(
+    identifier: Int,
+    block: ByteBuf.() -> Unit
+): ByteBuf {
+    writeByte(identifier)
+    val lengthIndex = writerIndex()
+    writeInt(0) // reserve 4 bytes for message length
+    block()
+    setInt(lengthIndex, writerIndex() - lengthIndex) // set message length
+    return this
+}
+
+internal fun ByteBuf.writePgMessage(
+    identifier: Int,
+) {
+    writeByte(identifier)
+    writeInt(4) // set message length (self)
 }
 
 internal fun ByteBuf.toByteArray(): ByteArray {
     val result = ByteArray(writerIndex())
     readBytes(result)
+    return result
+}
+
+internal fun ByteBuf.toByteArray(size: Int): ByteArray {
+    val result = ByteArray(size)
+    readBytes(result, 0, size)
     return result
 }
 
