@@ -17,6 +17,7 @@
 
 package x746143.ktntpg.pgclient.wire3
 
+// TODO: consider using enum
 // https://www.postgresql.org/docs/16/protocol-message-formats.html
 internal object BackendMessage {
     const val AUTHENTICATION = 'R'.code.toByte()
