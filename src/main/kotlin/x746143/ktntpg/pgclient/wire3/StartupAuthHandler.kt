@@ -55,7 +55,7 @@ internal class StartupAuthHandler(
     }
 
     // https://www.postgresql.org/docs/16/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-STARTUPMESSAGE
-    fun sendStartupMessage() {
+    fun sendStartupMessage(): StartupAuthHandler {
         output.writePgMessage {
             writeInt(MessageCode.PROTOCOL_VERSION)
             writeList {
@@ -66,6 +66,7 @@ internal class StartupAuthHandler(
                 param(dateStyleParam, dateStyleValue)
             }
         }
+        return this
     }
 
     suspend fun authenticate() {

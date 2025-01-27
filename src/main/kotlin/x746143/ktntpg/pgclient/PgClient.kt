@@ -75,14 +75,13 @@ class PgClient(
         val inputChannel = ContinuationChannel()
         val bs = bootstrap.clone(eventLoop).handler(object : ChannelInitializer<SocketChannel>() {
             override fun initChannel(ch: SocketChannel) {
-                with(ch.pipeline()) {
-                    addLast(LengthFieldBasedFrameDecoder(0xFFFF, 1, 4, -4, 0))
-                    addLast(object : SimpleChannelInboundHandler<ByteBuf>() {
+                ch.pipeline()
+                    .addLast(LengthFieldBasedFrameDecoder(0xFFFF, 1, 4, -4, 0))
+                    .addLast(object : SimpleChannelInboundHandler<ByteBuf>() {
                         override fun channelRead0(ctx: ChannelHandlerContext, msg: ByteBuf) {
                             inputChannel.send(msg.retain())
                         }
                     })
-                }
             }
         })
 
@@ -90,10 +89,9 @@ class PgClient(
         val connection = PgConnectionImpl(inputChannel, NettyOutputChannel(channel)) {
             releaseConnection(it)
         }
-        with(StartupAuthHandler(connection.input, connection.output, props)) {
-            sendStartupMessage()
-            authenticate()
-        }
+        StartupAuthHandler(connection.input, connection.output, props)
+            .sendStartupMessage()
+            .authenticate()
         return connection
     }
 
