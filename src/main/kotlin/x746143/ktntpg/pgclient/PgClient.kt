@@ -21,12 +21,12 @@ import io.netty.channel.*
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.util.concurrent.FastThreadLocal
-import x746143.ktntpg.NettyContextKey
+import x746143.ktntpg.*
 import x746143.ktntpg.channel.ContinuationChannel
 import x746143.ktntpg.channel.NettyOutputChannel
-import x746143.ktntpg.connectAwait
 import x746143.ktntpg.pgclient.wire3.StartupAuthHandler
-import x746143.ktntpg.suspendUninterceptedCoroutine
+import java.lang.Exception
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.coroutineContext
@@ -37,6 +37,7 @@ class PgClient(
     private val bootstrap: Bootstrap
 ) : PgConnection {
     private val _connectionCounter = AtomicInteger()
+    private val initPoolLatch = CountDownLatch(props.minPoolSizePerThread)
     val connectionCounter get() = _connectionCounter.get()
 
     // TODO: analyze io.netty.channel.pool.FixedChannelPool and io.netty.channel.pool.SimpleChannelPool
@@ -46,14 +47,26 @@ class PgClient(
         }
     }
 
-    suspend fun initPool(): PgClient {
+    fun initPool(): PgClient {
+        var exception: Exception? = null
         repeat(props.minPoolSizePerThread) {
-            with(connectionPool.get()) {
-                connections[size++] = createConnection(bootstrap.config().group().next())
-                capacity++
-                _connectionCounter.incrementAndGet()
+            val eventLoop = bootstrap.config().group().next()
+            eventLoop.startCoroutine {
+                try {
+                    with(connectionPool.get()) {
+                        connections[size++] = createConnection(eventLoop)
+                        capacity++
+                        _connectionCounter.incrementAndGet()
+                    }
+                } catch (e: Exception) {
+                    exception = e
+                } finally {
+                    initPoolLatch.countDown()
+                }
             }
         }
+        initPoolLatch.await()
+        exception?.let { throw it }
         return this
     }
 
@@ -86,6 +99,8 @@ class PgClient(
 
     // TODO: add timeout
     private suspend fun acquireConnection(): PgConnection {
+        val nettyContext = coroutineContext[NettyContext]
+            ?: throw PgException("The coroutine is running outside of Netty EventLoop")
         val pool = connectionPool.get()
         return if (pool.size == 0) {
             if (pool.capacity == props.maxPoolSizePerThread) {
@@ -95,8 +110,7 @@ class PgClient(
             } else {
                 pool.capacity++
                 _connectionCounter.incrementAndGet()
-                val eventLoop = coroutineContext[NettyContextKey]!!.ctx.channel().eventLoop()
-                return createConnection(eventLoop)
+                return createConnection(nettyContext.eventLoop)
             }
         } else {
             pool.connections[--pool.size]!!

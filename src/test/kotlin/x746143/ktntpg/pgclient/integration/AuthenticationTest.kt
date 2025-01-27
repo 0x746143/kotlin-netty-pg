@@ -18,7 +18,6 @@ package x746143.ktntpg.pgclient.integration
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.*
 import org.testcontainers.containers.PostgreSQLContainer
 import x746143.ktntpg.pgclient.PgClient
@@ -61,14 +60,14 @@ class AuthenticationTest {
 
     @Timeout(1)
     @Test
-    fun testSuccessfulAuthentication() = runBlocking {
+    fun testSuccessfulAuthentication() {
         val pgClient = PgClient(props, bootstrap).initPool()
         assertEquals(1, pgClient.connectionCounter)
     }
 
     @Timeout(1)
     @Test
-    fun testFailedAuthentication() = runBlocking {
+    fun testFailedAuthentication() {
         val ex = assertThrows<PgException> {
             PgClient(props.copy(password = "incorrect_password"), bootstrap).initPool()
         }

@@ -18,12 +18,12 @@ package x746143.ktntpg.pgclient.integration
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.*
 import org.testcontainers.containers.PostgreSQLContainer
 import x746143.ktntpg.pgclient.PgClient
 import x746143.ktntpg.pgclient.PgProperties
 import x746143.ktntpg.pgclient.test.toSingleLine
+import x746143.ktntpg.runTest
 import kotlin.test.assertEquals
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -33,8 +33,9 @@ class QueryTest {
         .withUsername("test-user")
         .withPassword("test-password")
     private lateinit var client: PgClient
+    private val eventLoopGroup = NioEventLoopGroup(1)
     private val bootstrap = Bootstrap()
-        .group(NioEventLoopGroup())
+        .group(eventLoopGroup)
         .channel(NioSocketChannel::class.java)
 
     @BeforeAll
@@ -50,20 +51,18 @@ class QueryTest {
                 maxPoolSizePerThread = 1
             )
         }
-        client = PgClient(props, bootstrap)
-        runBlocking {
-            client.initPool()
-        }
+        client = PgClient(props, bootstrap).initPool()
     }
 
     @AfterAll
     fun tearDown() {
+        eventLoopGroup.shutdownGracefully().syncUninterruptibly()
         postgres.stop()
     }
 
     @Timeout(1)
     @Test
-    fun simpleQuery() = runBlocking {
+    fun simpleQuery() = bootstrap.runTest {
         val sql = """
             select integer_column, varchar_column
             from basic_types_table
