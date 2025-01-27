@@ -133,6 +133,12 @@ class PgClient(
         }
     }
 
+    override suspend fun preparedQuery(sql: String): List<Row> {
+        return acquireConnection().use {
+            it.preparedQuery(sql)
+        }
+    }
+
     suspend fun transaction(block: (PgConnection) -> Unit) {
         return acquireConnection().use {
             block(it)

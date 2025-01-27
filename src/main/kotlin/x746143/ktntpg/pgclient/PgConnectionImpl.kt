@@ -31,6 +31,10 @@ class PgConnectionImpl(
         return queryHandler.query(sql)
     }
 
+    override suspend fun preparedQuery(sql: String): List<Row> {
+        return queryHandler.preparedQuery(sql)
+    }
+
     private suspend fun closeConnection() {
         TODO()
     }

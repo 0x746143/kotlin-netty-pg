@@ -17,4 +17,5 @@ package x746143.ktntpg.pgclient
 
 interface PgConnection : SuspendCloseable {
     suspend fun query(sql: String): List<Row>
+    suspend fun preparedQuery(sql: String): List<Row>
 }
