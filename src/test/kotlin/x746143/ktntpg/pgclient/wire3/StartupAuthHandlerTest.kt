@@ -22,15 +22,12 @@ import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import x746143.ktntpg.pgclient.PgAuthProperties
 import x746143.ktntpg.pgclient.PgException
-import x746143.ktntpg.pgclient.test.*
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 
-class StartupAuthHandlerTest {
+class StartupAuthHandlerTest : AbstractHandlerTest() {
 
-    private var input = TestInputChannel()
-    private var output = TestOutputChannel()
     private var props = TestPgAuthProperties("test-user", "test-password", "test-db", "test-app")
 
     @Timeout(1)

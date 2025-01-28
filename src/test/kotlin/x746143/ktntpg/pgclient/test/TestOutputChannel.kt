@@ -17,6 +17,7 @@ package x746143.ktntpg.pgclient.test
 
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
+import org.junit.jupiter.api.Assertions.assertEquals
 import x746143.ktntpg.channel.OutputMessageChannel
 import x746143.ktntpg.pgclient.wire3.toByteArray
 import kotlin.test.assertContentEquals
@@ -28,7 +29,15 @@ class TestOutputChannel : OutputMessageChannel {
         this.message = message
     }
 
-    fun verifyMessage(expectedMsg: String) {
-        assertContentEquals(expectedMsg.mixedHexToByteBuf().toByteArray(), message.toByteArray())
+    fun verifyMessage(expectedMessage: String) {
+        assertContentEquals(expectedMessage.mixedHexToByteBuf().toByteArray(), message.toByteArray())
+    }
+
+    fun verifyMessages(vararg expectedMessages: String) {
+        for (expectedMessage in expectedMessages) {
+            val expectedBytes = expectedMessage.mixedHexToByteBuf().toByteArray()
+            assertContentEquals(expectedBytes, message.toByteArray(expectedBytes.size))
+        }
+        assertEquals(0, message.readableBytes())
     }
 }

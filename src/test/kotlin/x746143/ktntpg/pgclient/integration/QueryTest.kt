@@ -22,6 +22,7 @@ import org.junit.jupiter.api.*
 import org.testcontainers.containers.PostgreSQLContainer
 import x746143.ktntpg.pgclient.PgClient
 import x746143.ktntpg.pgclient.PgProperties
+import x746143.ktntpg.pgclient.Row
 import x746143.ktntpg.pgclient.test.toSingleLine
 import x746143.ktntpg.runTest
 import kotlin.test.assertEquals
@@ -60,15 +61,27 @@ class QueryTest {
         postgres.stop()
     }
 
+    private val basicTypesTableSql = """
+        select integer_column, varchar_column
+        from basic_types_table
+        order by integer_column
+        """.toSingleLine()
+
     @Timeout(1)
     @Test
     fun simpleQuery() = bootstrap.runTest {
-        val sql = """
-            select integer_column, varchar_column
-            from basic_types_table
-            order by integer_column
-        """.toSingleLine()
-        val rows = client.query(sql)
+        val rows = client.query(basicTypesTableSql)
+        verifyBasicTypesResult(rows)
+    }
+
+    @Timeout(1)
+    @Test
+    fun preparedQueryWithoutParams() = bootstrap.runTest {
+        val rows = client.preparedQuery(basicTypesTableSql)
+        verifyBasicTypesResult(rows)
+    }
+
+    private fun verifyBasicTypesResult(rows: List<Row>) {
         assertEquals(2, rows.size)
         assertEquals(0, rows[0].getInt(0))
         assertEquals(1, rows[1].getInt(0))

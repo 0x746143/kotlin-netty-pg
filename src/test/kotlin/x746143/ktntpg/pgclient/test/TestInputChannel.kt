@@ -30,14 +30,18 @@ class TestInputChannel : InputMessageChannel {
         }
     }
 
-    fun send(msg: String) {
+    fun send(message: String) {
         val cont = continuation
         if (cont == null) {
-            throw UnhandledMessageException(msg)
+            throw UnhandledMessageException(message)
         } else {
             continuation = null
-            cont.resume(msg.mixedHexToByteBuf())
+            cont.resume(message.mixedHexToByteBuf())
         }
+    }
+
+    fun send(vararg messages: String) {
+        messages.forEach(::send)
     }
 
     class UnhandledMessageException(message: String) : Exception(message)
